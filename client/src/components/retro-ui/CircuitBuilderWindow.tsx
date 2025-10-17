@@ -1251,6 +1251,8 @@ void loop() {
             isPanning={isPanning}
             showComponentPanel={showComponentPanel}
             showPropertiesPanel={showPropertiesPanel}
+            zoom={zoom}
+            pan={pan}
           />
           
           {/* Proper simulator implementation with real execution */}

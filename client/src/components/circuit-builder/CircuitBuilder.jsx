@@ -28,7 +28,7 @@ import OLEDDisplay from './components/OLEDDisplay';
  * Main Circuit Builder component
  * Manages components, wires, and interactions
  */
-const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning = false, showComponentPanel = true, showPropertiesPanel = true }) => {
+const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning = false, showComponentPanel = true, showPropertiesPanel = true, zoom = 1, pan = { x: 0, y: 0 } }) => {
   // Access simulator context to share component data
   const { setComponents: setSimulationComponents } = useSimulator();
   
@@ -573,6 +573,9 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
       <div 
         className={`flex-1 relative h-full overflow-hidden blueprint-canvas ${isPanning ? 'panning' : ''}`}
         ref={canvasRef}
+        style={{
+          backgroundSize: `${20 * zoom}px ${20 * zoom}px`
+        }}
         onClick={(e) => {
           // Only deselect when clicking directly on the canvas background
           if (e.target === canvasRef.current) {
@@ -580,31 +583,44 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
           }
         }}
       >
-        {/* Circuit components */}
-        {components.map(renderComponent)}
-        
-        {/* Wire management layer - handles creating and managing wires between pins */}
-        <BasicWireManager 
-          canvasRef={canvasRef} 
-          onWireSelection={handleWireSelection}
-          onWireColorChange={handleWireColorChange}
-        />
-        
-        {/* Custom pin tooltip component */}
-        <PinTooltip />
-        
-        {/* Wire Event Listener - Hidden element to capture wire selection events */}
-        <div className="hidden" id="wire-event-listener"></div>
-        
-        {/* Empty state */}
-        {components.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <p className="mb-2">Add components from the palette to get started</p>
-              <p className="text-sm">Click and drag to position components</p>
+        {/* Zoomable/pannable content container */}
+        <div 
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: '0 0',
+            width: '100%',
+            height: '100%',
+            position: 'relative'
+          }}
+        >
+          {/* Circuit components */}
+          {components.map(renderComponent)}
+          
+          {/* Wire management layer - handles creating and managing wires between pins */}
+          <BasicWireManager 
+            canvasRef={canvasRef} 
+            onWireSelection={handleWireSelection}
+            onWireColorChange={handleWireColorChange}
+            zoom={zoom}
+            pan={pan}
+          />
+          
+          {/* Custom pin tooltip component */}
+          <PinTooltip />
+          
+          {/* Wire Event Listener - Hidden element to capture wire selection events */}
+          <div className="hidden" id="wire-event-listener"></div>
+          
+          {/* Empty state */}
+          {components.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <p className="mb-2">Add components from the palette to get started</p>
+                <p className="text-sm">Click and drag to position components</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       {/* Right sidebar - Component properties */}
