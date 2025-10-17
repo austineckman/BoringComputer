@@ -390,7 +390,7 @@ void loop() {
     let newComponent;
     
     // Special handling for hero boards - assign sequential IDs
-    if (componentName === 'hero-board') {
+    if (componentName === 'heroboard') {
       const nextBoardNumber = heroboardCounter + 1;
       const boardId = `heroboard-${nextBoardNumber}`;
       newComponent = createComponent(componentName, boardId);
@@ -796,8 +796,12 @@ void loop() {
   const { 
     startSimulation,
     stopSimulation,
+    startSimulationForBoard,
+    stopSimulationForBoard,
+    activeBoardId,
     addLog: addSimulatorLog,
     logs: simulatorLogs,
+    components: simulatorComponents, // Get components from simulator for multi-board support
     updateComponentState,  // Access the updateComponentState function
     updateComponentPins,   // Access the updateComponentPins function for pin-specific updates
     setCode: updateSimulatorCode // Get the simulator's setCode function
@@ -888,7 +892,14 @@ void loop() {
     if (isSimulationRunning) {
       // Stop the simulation
       addSimulationLog('Stopping simulation...');
-      stopSimulation();
+      
+      // If a board is selected, stop that board specifically
+      if (selectedBoard) {
+        stopSimulationForBoard(selectedBoard);
+      } else {
+        stopSimulation();
+      }
+      
       setIsSimulationRunning(false);
       if (typeof window !== 'undefined') {
         (window as any).isSimulationRunning = false; // Set global flag for components
@@ -917,9 +928,15 @@ void loop() {
         (window as any).isSimulationRunning = true; // Set global flag for components
       }
       
-      // Start the simulation with the current code directly (now async)
-      await startSimulation(currentCode);
-      showNotification('Simulation running!', 'success');
+      // If a board is selected, run that board's code specifically
+      if (selectedBoard && boardCodes[selectedBoard]) {
+        await startSimulationForBoard(selectedBoard, boardCodes[selectedBoard]);
+        showNotification(`Running code for ${selectedBoard}`, 'success');
+      } else {
+        // Start the simulation with the current code directly (now async)
+        await startSimulation(currentCode);
+        showNotification('Simulation running!', 'success');
+      }
     }
   };
   
@@ -1514,11 +1531,11 @@ void loop() {
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-hidden flex flex-col">
             {/* Board Selector - Show when hero boards exist */}
-            {components.filter(c => c.type === 'heroboard').length > 0 && (
+            {simulatorComponents && simulatorComponents.filter(c => c.type === 'heroboard').length > 0 && (
               <div className="bg-gray-800 border-b border-gray-700 px-3 py-2 flex items-center gap-2">
                 <span className="text-xs text-gray-400">Board:</span>
                 <div className="flex gap-1">
-                  {components
+                  {simulatorComponents
                     .filter(c => c.type === 'heroboard')
                     .map(board => (
                       <button

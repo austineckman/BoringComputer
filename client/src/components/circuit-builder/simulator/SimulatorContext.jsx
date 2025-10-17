@@ -13,8 +13,12 @@ const SimulatorContext = createContext({
   components: [],
   wires: [],
   componentStates: {},
+  activeBoardId: null,
   startSimulation: () => {},
   stopSimulation: () => {},
+  startSimulationForBoard: () => {},
+  stopSimulationForBoard: () => {},
+  setActiveBoardId: () => {},
   addLog: () => {},
   addSerialLog: () => {},
   setCode: () => {},
@@ -35,11 +39,18 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
   const [components, setComponents] = useState([]);
   const [wires, setWires] = useState([]);
   const [componentStates, setComponentStates] = useState({});
+  const [activeBoardId, setActiveBoardId] = useState(null);
 
-  const avrCoreRef = useRef(null);
-  const executionIntervalRef = useRef(null);
+  // Multi-board runtime management
+  // Structure: { [boardId]: { core, isRunning, lastTimestamp, serialBuffer, oledDecoders, tm1637Decoders, tm1637ProtocolDecoders } }
+  const avrCoresRef = useRef({});
+  const schedulerHandleRef = useRef(null);
   const componentsRef = useRef([]);
   const wiresRef = useRef([]);
+  
+  // Legacy single-board refs (kept for backwards compatibility during migration)
+  const avrCoreRef = useRef(null);
+  const executionIntervalRef = useRef(null);
   const oledDecodersRef = useRef({});
   const tm1637DecodersRef = useRef({});
   const tm1637ProtocolDecodersRef = useRef({});
@@ -335,8 +346,8 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     }
   };
 
-  const handlePinChange = (pin, isHigh) => {
-    console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+  const handlePinChange = (pin, isHigh, boardId = null) => {
+    console.log(`[AVR8] Pin ${pin} changed to ${isHigh ? 'HIGH' : 'LOW'}${boardId ? ` (board: ${boardId})` : ''}`);
 
     const latestComponents = window.latestSimulatorData?.components || [];
     const latestWires = window.latestSimulatorData?.wires || [];
@@ -344,22 +355,38 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     console.log(`[AVR8] Checking ${latestComponents.length} components and ${latestWires.length} wires`);
 
     // Feed TM1637 protocol decoder with pin states (CLK=Pin2, DIO=Pin3)
+    // Only for the specific board's decoders if boardId is provided
     if (pin === 2 || pin === 3) {
-      Object.values(tm1637ProtocolDecodersRef.current).forEach(decoder => {
-        if (pin === 2) {
-          decoder.setClkPin(isHigh);
-        } else if (pin === 3) {
-          decoder.setDioPin(isHigh);
-        }
-      });
+      if (boardId && avrCoresRef.current[boardId]) {
+        const runtime = avrCoresRef.current[boardId];
+        Object.values(runtime.tm1637ProtocolDecoders || {}).forEach(decoder => {
+          if (pin === 2) {
+            decoder.setClkPin(isHigh);
+          } else if (pin === 3) {
+            decoder.setDioPin(isHigh);
+          }
+        });
+      } else {
+        // Fallback to global decoders for backward compatibility
+        Object.values(tm1637ProtocolDecodersRef.current).forEach(decoder => {
+          if (pin === 2) {
+            decoder.setClkPin(isHigh);
+          } else if (pin === 3) {
+            decoder.setDioPin(isHigh);
+          }
+        });
+      }
     }
 
     latestComponents.forEach(component => {
+      // Only update the specific board if boardId is provided
       if (component.type === 'heroboard') {
-        updateComponentPins(component.id, {
-          [pin]: isHigh,
-          ...(pin === 13 ? { pin13: isHigh } : {})
-        });
+        if (!boardId || component.id === boardId) {
+          updateComponentPins(component.id, {
+            [pin]: isHigh,
+            ...(pin === 13 ? { pin13: isHigh } : {})
+          });
+        }
       }
 
       if (component.type === 'led' || component.id.includes('led')) {
@@ -501,6 +528,131 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     };
   }, [componentsRef.current, wiresRef.current, updateOLEDDisplay, componentStates]); // Added componentStates dependency
 
+  // Multi-board simulation functions - proper per-board core management
+  const startSimulationForBoard = async (boardId, boardCode) => {
+    console.log(`[Multi-board] Starting simulation for board: ${boardId}`);
+    
+    if (!boardCode || boardCode.trim() === '') {
+      addLog(`❌ Error: No code for board ${boardId}`);
+      return;
+    }
+
+    setActiveBoardId(boardId);
+    addLog(`🎯 Compiling code for board: ${boardId}`);
+    setIsCompiling(true);
+
+    try {
+      const result = await ArduinoCompilationService.compileAndParse(boardCode);
+      setIsCompiling(false);
+
+      if (!result.success) {
+        addLog(`❌ Compilation failed for ${boardId}:`);
+        result.errors?.forEach(error => addLog(`   ${error}`));
+        return;
+      }
+
+      addLog(`✅ Compilation successful for ${boardId}`);
+      
+      // Create new AVR8Core for this board
+      const newCore = new AVR8Core();
+      newCore.loadProgram(result.program);
+      
+      // Set up pin change listeners for this board
+      for (let arduinoPin = 0; arduinoPin <= 19; arduinoPin++) {
+        const mapping = AVR8Core.mapArduinoPin(arduinoPin);
+        if (mapping) {
+          newCore.onPinChange(mapping.port, mapping.pin, (isHigh) => {
+            // Board-aware pin change handler - pass boardId to only update this board
+            console.log(`[Board ${boardId}] Pin ${arduinoPin} changed to ${isHigh ? 'HIGH' : 'LOW'}`);
+            handlePinChange(arduinoPin, isHigh, boardId);
+          });
+        }
+      }
+      
+      // Set up serial output for this board
+      newCore.onSerialData((byte) => {
+        if (byte === 10) {
+          addSerialLog('', true);
+        } else if (byte >= 32 && byte <= 126) {
+          addSerialLog(String.fromCharCode(byte), false);
+        }
+      });
+
+      // Store the core
+      avrCoresRef.current[boardId] = {
+        core: newCore,
+        isRunning: true,
+        lastTimestamp: performance.now(),
+        serialBuffer: '',
+        oledDecoders: {},
+        tm1637Decoders: {},
+        tm1637ProtocolDecoders: {}
+      };
+
+      addLog(`🚀 Board ${boardId} is running`);
+      setIsRunning(true);
+      
+      // Start execution for this board
+      startBoardExecution(boardId);
+    } catch (err) {
+      console.error(`[Multi-board] Error starting board ${boardId}:`, err);
+      addLog(`❌ Error starting ${boardId}: ${err.message}`);
+      setIsCompiling(false);
+    }
+  };
+
+  const startBoardExecution = (boardId) => {
+    const runtime = avrCoresRef.current[boardId];
+    if (!runtime) return;
+
+    const executeBoardFrame = () => {
+      if (!runtime.isRunning || !avrCoresRef.current[boardId]) {
+        return; // Stop if board was stopped
+      }
+
+      const now = performance.now();
+      const delta = Math.min(now - runtime.lastTimestamp, 50);
+      const cyclesToExecute = Math.floor((delta / 1000) * 16000000);
+      
+      if (cyclesToExecute > 0) {
+        runtime.core.execute(cyclesToExecute);
+        runtime.lastTimestamp = now;
+      }
+
+      // Continue execution
+      schedulerHandleRef.current = requestAnimationFrame(executeBoardFrame);
+    };
+
+    executeBoardFrame();
+  };
+
+  const stopSimulationForBoard = (boardId) => {
+    if (boardId && avrCoresRef.current[boardId]) {
+      console.log(`[Multi-board] Stopping board: ${boardId}`);
+      avrCoresRef.current[boardId].isRunning = false;
+      avrCoresRef.current[boardId].core.stop();
+      delete avrCoresRef.current[boardId];
+      
+      if (activeBoardId === boardId) {
+        setActiveBoardId(null);
+      }
+      
+      // Stop scheduler if no boards are running
+      if (Object.keys(avrCoresRef.current).length === 0) {
+        if (schedulerHandleRef.current) {
+          cancelAnimationFrame(schedulerHandleRef.current);
+          schedulerHandleRef.current = null;
+        }
+        setIsRunning(false);
+      }
+      
+      addLog(`⏹ Stopped board: ${boardId}`);
+    } else if (!boardId) {
+      // Stop all boards
+      Object.keys(avrCoresRef.current).forEach(id => stopSimulationForBoard(id));
+    }
+  };
+
   const contextValue = {
     code,
     logs,
@@ -510,8 +662,12 @@ export const SimulatorProvider = ({ children, initialCode = '' }) => {
     components,
     wires,
     componentStates,
+    activeBoardId,
     startSimulation,
     stopSimulation,
+    startSimulationForBoard,
+    stopSimulationForBoard,
+    setActiveBoardId,
     addLog,
     addSerialLog,
     setCode,
