@@ -569,7 +569,7 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
       
       {/* Main canvas */}
       <div 
-        className="flex-1 relative h-full overflow-hidden bg-white" 
+        className="flex-1 relative h-full overflow-hidden blueprint-canvas" 
         ref={canvasRef}
         onClick={(e) => {
           // Only deselect when clicking directly on the canvas background
