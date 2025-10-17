@@ -1,4 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { Trash2, Info, RotateCw } from 'lucide-react';
 
 /**
  * CircuitComponent represents a draggable electronic component with pins
@@ -36,7 +44,10 @@ const CircuitComponent = ({
   onMove,
   onRotate,
   zoom = 1,
-  pan = { x: 0, y: 0 }
+  pan = { x: 0, y: 0 },
+  onDelete,
+  onShowProperties,
+  showPropertiesPanel = true
 }) => {
   // State for component position and interaction
   const [position, setPosition] = useState({ x: x || 0, y: y || 0 });
@@ -547,21 +558,22 @@ const CircuitComponent = ({
   }, [isDragging, dragOffset, canvasRef, id, onMove, zoom, pan]);
   
   return (
-    <div
-      ref={componentRef}
-      id={`component-${id}`}
-      className="circuit-component absolute select-none"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${width}px`,
-        height: `${height}px`,
-        cursor: isDragging ? 'grabbing' : 'grab'
-      }}
-      onClick={handleClick}
-      onMouseDown={handleMouseDown}
-      onContextMenu={handleContextMenu}
-    >
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          ref={componentRef}
+          id={`component-${id}`}
+          className="circuit-component absolute select-none"
+          style={{
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            cursor: isDragging ? 'grabbing' : 'grab'
+          }}
+          onClick={handleClick}
+          onMouseDown={handleMouseDown}
+        >
       {/* Component image */}
       <div className="absolute inset-0 flex items-center justify-center p-2">
         <img 
@@ -615,6 +627,25 @@ const CircuitComponent = ({
         {type}
       </div>
     </div>
+      </ContextMenuTrigger>
+      
+      <ContextMenuContent className="w-48">
+        {!showPropertiesPanel && onShowProperties && (
+          <>
+            <ContextMenuItem onClick={() => onShowProperties(id)}>
+              <Info className="mr-2 h-4 w-4" />
+              Show Properties
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        )}
+        
+        <ContextMenuItem onClick={() => onDelete?.(id)}>
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete Component
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 };
 

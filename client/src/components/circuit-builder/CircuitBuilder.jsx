@@ -310,10 +310,13 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
 };
   
   // Handle component deletion
-  const handleDeleteComponent = () => {
-    if (selectedComponentId) {
-      setComponents(prev => prev.filter(c => c.id !== selectedComponentId));
-      setSelectedComponentId(null);
+  const handleDeleteComponent = (componentId) => {
+    const idToDelete = componentId || selectedComponentId;
+    if (idToDelete) {
+      setComponents(prev => prev.filter(c => c.id !== idToDelete));
+      if (selectedComponentId === idToDelete) {
+        setSelectedComponentId(null);
+      }
     }
   };
   
@@ -572,6 +575,9 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
         height={height}
         zoom={zoom}
         pan={pan}
+        onDelete={handleDeleteComponent}
+        onShowProperties={() => {/* TODO: implement show properties */}}
+        showPropertiesPanel={showPropertiesPanel}
       />
     );
   };
