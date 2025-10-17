@@ -1045,83 +1045,108 @@ void loop() {
       <div className="flex flex-col w-full h-full bg-gray-800 text-white overflow-hidden">
       {/* Toolbar */}
       <div className="bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <img 
             src="/@fs/home/runner/workspace/attached_assets/led.icon.png" 
             alt="Sandbox" 
-            className="h-6 mr-2" 
+            className="h-6" 
           />
           <h2 className="text-lg font-bold">Sandbox</h2>
+          
+          <div className="w-px h-6 bg-gray-600"></div>
+          
+          {/* Panel Toggle Controls */}
+          <button 
+            className={`p-1 rounded text-xs transition-colors ${showComponentPanel ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+            onClick={() => setShowComponentPanel(!showComponentPanel)}
+            title={showComponentPanel ? "Hide Components Panel" : "Show Components Panel"}
+          >
+            <PanelLeft size={18} />
+          </button>
+          <button 
+            className={`p-1 rounded text-xs transition-colors ${showPropertiesPanel ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+            onClick={() => setShowPropertiesPanel(!showPropertiesPanel)}
+            title={showPropertiesPanel ? "Hide Properties Panel" : "Show Properties Panel"}
+          >
+            <PanelRight size={18} />
+          </button>
         </div>
+        
         <div className="flex items-center space-x-2">
+          {/* Main Actions */}
+          <button 
+            className={`px-3 py-1.5 rounded text-sm font-medium flex items-center space-x-1 ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+            onClick={runSimulation}
+            title={isSimulationRunning ? "Stop Simulation" : "Run Simulation"}
+          >
+            <Play size={16} />
+            <span>{isSimulationRunning ? 'Stop' : 'Run'}</span>
+          </button>
+          <button 
+            className="px-3 py-1.5 bg-blue-600 rounded hover:bg-blue-700 text-sm font-medium flex items-center space-x-1"
+            onClick={saveProject}
+            title="Save Project"
+          >
+            <Save size={16} />
+            <span>Save Project</span>
+          </button>
+          <button 
+            className="px-3 py-1.5 bg-orange-600 rounded hover:bg-orange-700 text-sm font-medium flex items-center space-x-1"
+            onClick={() => setShowExamplesWindow(true)}
+            title="Load Example"
+          >
+            <FolderOpen size={16} />
+            <span>Load Example</span>
+          </button>
+          
+          <div className="w-px h-6 bg-gray-600"></div>
+          
           {/* Canvas Navigation Controls */}
           <div className="flex items-center space-x-1 bg-gray-800 rounded px-2 py-1">
             <button 
               className="bg-gray-700 p-1 rounded hover:bg-blue-600 transition-colors text-xs"
               onClick={() => setZoom(Math.min(3, zoom * 1.25))}
-              title="Zoom In (Mouse Wheel)"
+              title="Zoom In"
             >
-              <ZoomIn size={16} />
+              <ZoomIn size={14} />
             </button>
             <button 
               className="bg-gray-700 p-1 rounded hover:bg-blue-600 transition-colors text-xs"
               onClick={() => setZoom(Math.max(0.1, zoom * 0.8))}
-              title="Zoom Out (Mouse Wheel)"
+              title="Zoom Out"
             >
-              <ZoomOut size={16} />
+              <ZoomOut size={14} />
             </button>
             <button 
               className="bg-gray-700 p-1 rounded hover:bg-green-600 transition-colors text-xs"
               onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
-              title="Reset View (Center & 100%)"
+              title="Reset View"
             >
-              <Move size={16} />
+              <Move size={14} />
             </button>
-            <span className="text-xs font-mono bg-gray-900 px-2 py-0.5 rounded" title="Current Zoom Level">
+            <span className="text-xs font-mono bg-gray-900 px-1.5 py-0.5 rounded" title="Current Zoom">
               {Math.round(zoom * 100)}%
             </span>
           </div>
-          <span className="text-xs text-gray-400" title="Pan: Middle Mouse or Shift+Drag">
-            🖱️ Pan
-          </span>
           
           {/* Component controls */}
           <button 
             className={`p-1 rounded text-xs ${selectedComponent ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
             onClick={rotateSelectedComponent}
             disabled={!selectedComponent}
-            title="Rotate Selected Component"
+            title="Rotate Selected"
           >
-            <RotateCcw size={18} />
+            <RotateCcw size={16} />
           </button>
           <button 
             className={`p-1 rounded text-xs ${selectedComponent || selectedWire ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600 opacity-50 cursor-not-allowed'}`}
             onClick={deleteSelectedItem}
             disabled={!selectedComponent && !selectedWire}
-            title="Delete Selected Item"
+            title="Delete Selected"
           >
-            <Trash2 size={18} />
+            <Trash2 size={16} />
           </button>
           
-          {/* Project controls */}
-          <div className="w-px h-6 bg-gray-600 mx-2"></div>
-          <button 
-            className={`p-1 rounded text-xs ${isSimulationRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-            onClick={runSimulation}
-            title={isSimulationRunning ? "Stop Simulation" : "Run Simulation"}
-          >
-            <Play size={18} />
-          </button>
-          <button 
-            className="bg-blue-600 p-1 rounded hover:bg-blue-700 text-xs"
-            onClick={saveProject}
-            title="Save Project"
-          >
-            <Save size={18} />
-          </button>
-          
-
-
           {/* Admin-only Save Example button */}
           {hasAdminAccess && (
             <button 
@@ -1129,23 +1154,16 @@ void loop() {
               onClick={() => setShowSaveModal(true)}
               title="Save as Example (Admin)"
             >
-              <BookOpen size={18} />
+              <BookOpen size={16} />
             </button>
           )}
           
-          {/* Load Examples button */}
-          <button 
-            className="bg-orange-600 p-1 rounded hover:bg-orange-700 text-xs"
-            onClick={() => setShowExamplesWindow(true)}
-            title="Load Circuit Examples"
-          >
-            <FolderOpen size={18} />
-          </button>
+          <div className="w-px h-6 bg-gray-600"></div>
           
           {/* Close button */}
           <button 
             onClick={onClose}
-            className="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 ml-4"
+            className="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600"
             title="Close Sandbox"
           >
             <X size={18} />
