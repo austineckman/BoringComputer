@@ -125,50 +125,20 @@ const HeroBoard = ({
     }
   }, [componentStates, id]);
   
-  // Register pins with global PinRegistry and update on movement
+  // Dispatch component moved event when position changes
   useEffect(() => {
-    const registry = window.globalPinRegistry;
-    if (!registry || !canvasRef.current) return;
-
-    // Helper to get current pin positions
-    const getPinPositions = () => {
-      const heroboardPins = [...document.querySelectorAll(`[id^="pt-heroboard-${id}-"]`)];
-      const pinPositions = {};
-      
-      // The offset correction for HERO board pins
-      const OFFSET_CORRECTION_X = 256;
-      const OFFSET_CORRECTION_Y = 304;
-      
-      heroboardPins.forEach(pinElement => {
-        if (pinElement && pinElement.id) {
-          const rect = pinElement.getBoundingClientRect();
-          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
-          
-          pinPositions[pinElement.id] = {
-            x: rect.left + rect.width/2 - canvasRect.left + OFFSET_CORRECTION_X,
-            y: rect.top + rect.height/2 - canvasRect.top + OFFSET_CORRECTION_Y
-          };
+    if (posLeft !== undefined && posTop !== undefined) {
+      // Dispatch event to notify wire manager
+      const event = new CustomEvent('componentMoved', {
+        detail: {
+          componentId: id,
+          x: posLeft,
+          y: posTop
         }
       });
-      
-      return pinPositions;
-    };
-
-    // Register component pins on mount
-    const initialPins = getPinPositions();
-    registry.registerComponent(id, initialPins);
-
-    // Update pin positions when component moves
-    if (posLeft !== undefined && posTop !== undefined) {
-      const updatedPins = getPinPositions();
-      registry.updatePinPositions(id, updatedPins);
+      document.dispatchEvent(event);
     }
-
-    // Cleanup: unregister on unmount
-    return () => {
-      registry.unregisterComponent(id);
-    };
-  }, [id, posLeft, posTop, canvasRef]);
+  }, [id, posLeft, posTop]);
 
   const onPinInfoChange = (e) => {
     setPinInfo(e.detail);

@@ -625,76 +625,91 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     // No continuous drawing mode
   };
 
-  // Handle pin registry updates - updates wires when pins move
-  const handlePinRegistryUpdate = (event, componentId, pinPositions) => {
-    if (event !== 'update') return;
+  // Get pin world position by querying DOM
+  const getPinWorldPosition = (pinId) => {
+    if (!canvasRef?.current) return null;
     
-    console.log(`[WireManager] PinRegistry update for ${componentId}`, pinPositions);
+    // Find the pin element in the DOM
+    const pinElement = document.getElementById(pinId);
+    if (!pinElement) {
+      console.log(`[WireManager] Pin ${pinId} not found in DOM`);
+      return null;
+    }
     
-    // Update all wires connected to this component
-    setWires(wires => {
-      return wires.map(wire => {
-        let updated = false;
+    // Get pin screen position
+    const rect = pinElement.getBoundingClientRect();
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    
+    // Convert to canvas-relative coordinates
+    const canvasX = rect.left + rect.width/2 - canvasRect.left;
+    const canvasY = rect.top + rect.height/2 - canvasRect.top;
+    
+    // Convert to world coordinates
+    const worldX = (canvasX - pan.x) / zoom;
+    const worldY = (canvasY - pan.y) / zoom;
+    
+    return { x: worldX, y: worldY };
+  };
+
+  // Refresh wire endpoints when a component moves
+  const refreshWireEndpoints = (componentId) => {
+    console.log(`[WireManager] Refreshing wire endpoints for component ${componentId}`);
+    
+    setWires(currentWires => {
+      return currentWires.map(wire => {
         const newWire = { ...wire };
+        let updated = false;
         
-        // Update source position if it's from the moved component
+        // Update source position if this wire connects to the moved component
         if (wire.sourceComponent === componentId && wire.sourceId) {
-          const pinPos = globalPinRegistry.getPinPosition(componentId, wire.sourceId);
-          if (pinPos) {
-            // Convert canvas-relative coordinates to world coordinates
-            const worldX = (pinPos.x - pan.x) / zoom;
-            const worldY = (pinPos.y - pan.y) / zoom;
-            
-            newWire.sourcePos = { x: worldX, y: worldY };
+          const worldPos = getPinWorldPosition(wire.sourceId);
+          if (worldPos) {
+            newWire.sourcePos = worldPos;
             updated = true;
             
-            // Update optimizedPath if it exists (for wires with pivot points)
+            // Update optimizedPath first point if it exists
             if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
               newWire.optimizedPath = [
-                { x: worldX, y: worldY },
+                worldPos,
                 ...newWire.optimizedPath.slice(1)
               ];
             }
             
-            console.log(`[WireManager] Updated source ${wire.sourceId} to world (${worldX}, ${worldY})`);
+            console.log(`[WireManager] Updated source ${wire.sourceId} to (${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)})`);
           }
         }
         
-        // Update target position if it's from the moved component
+        // Update target position if this wire connects to the moved component
         if (wire.targetComponent === componentId && wire.targetId) {
-          const pinPos = globalPinRegistry.getPinPosition(componentId, wire.targetId);
-          if (pinPos) {
-            // Convert canvas-relative coordinates to world coordinates
-            const worldX = (pinPos.x - pan.x) / zoom;
-            const worldY = (pinPos.y - pan.y) / zoom;
-            
-            newWire.targetPos = { x: worldX, y: worldY };
+          const worldPos = getPinWorldPosition(wire.targetId);
+          if (worldPos) {
+            newWire.targetPos = worldPos;
             updated = true;
             
-            // Update optimizedPath if it exists (for wires with pivot points)
+            // Update optimizedPath last point if it exists
             if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
               newWire.optimizedPath = [
                 ...newWire.optimizedPath.slice(0, -1),
-                { x: worldX, y: worldY }
+                worldPos
               ];
             }
             
-            console.log(`[WireManager] Updated target ${wire.targetId} to world (${worldX}, ${worldY})`);
+            console.log(`[WireManager] Updated target ${wire.targetId} to (${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)})`);
           }
         }
         
-        return newWire;
+        return updated ? newWire : wire;
       });
     });
   };
 
-  // Subscribe to pin registry updates
-  useEffect(() => {
-    globalPinRegistry.subscribe(handlePinRegistryUpdate);
-    return () => {
-      globalPinRegistry.unsubscribe(handlePinRegistryUpdate);
-    };
-  }, [wires, zoom, pan]);
+  // Handle component movement events
+  const handleComponentMoved = (event) => {
+    const componentId = event.detail?.componentId;
+    if (!componentId) return;
+    
+    refreshWireEndpoints(componentId);
+  };
 
   // Handle wire color change events from properties panel
   const handleWireColorChangeEvent = (event) => {
@@ -706,6 +721,10 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   useEffect(() => {
     // Listen for pin clicks from components
     document.addEventListener('pinClicked', handlePinClick);
+    
+    // Listen for component movement to update wire positions
+    document.addEventListener('componentMoved', handleComponentMoved);
+    document.addEventListener('componentMovedFinal', handleComponentMoved);
     
     // Listen for wire color change events from properties panel
     document.addEventListener('wireColorChange', handleWireColorChangeEvent);
@@ -723,6 +742,8 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     // Cleanup event listeners
     return () => {
       document.removeEventListener('pinClicked', handlePinClick);
+      document.removeEventListener('componentMoved', handleComponentMoved);
+      document.removeEventListener('componentMovedFinal', handleComponentMoved);
       document.removeEventListener('wireColorChange', handleWireColorChangeEvent);
       
       if (canvas) {

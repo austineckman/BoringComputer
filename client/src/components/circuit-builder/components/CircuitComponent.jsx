@@ -541,11 +541,13 @@ const CircuitComponent = ({
           });
         }
         
-        // Update PinRegistry with new pin positions
-        const registry = window.globalPinRegistry;
-        if (registry && Object.keys(pinPositions).length > 0) {
-          registry.updatePinPositions(id, pinPositions);
-        }
+        // Dispatch component moved event to update wires
+        document.dispatchEvent(new CustomEvent('componentMoved', {
+          detail: {
+            componentId: id,
+            newPosition: { x: newX, y: newY }
+          }
+        }));
       }
     };
     
