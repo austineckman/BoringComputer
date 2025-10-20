@@ -27,7 +27,9 @@ const HeroBoard = ({
   onSelect,
   isSelected,
   canvasRef,
-  onPinConnect
+  onPinConnect,
+  zoom = 1,
+  pan = { x: 0, y: 0 }
 }) => {
   const targetRef = useRef();
   const moveableRef = useRef();
@@ -128,6 +130,8 @@ const HeroBoard = ({
   // Dispatch component moved event when position changes
   useEffect(() => {
     if (posLeft !== undefined && posTop !== undefined) {
+      console.log(`[HeroBoard ${id}] Dispatching componentMoved at (${posLeft}, ${posTop})`);
+      
       // Dispatch event to notify wire manager
       const event = new CustomEvent('componentMoved', {
         detail: {

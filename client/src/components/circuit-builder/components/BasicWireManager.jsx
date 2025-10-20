@@ -90,6 +90,9 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   
+  // Track component positions to calculate movement deltas
+  const componentPositionsRef = useRef({});
+  
   // Wire color palette
   const wireColors = [
     '#ff0000', // Red
@@ -460,6 +463,24 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
       setPendingConnection(null);
       setPendingWireWaypoints([]); // Reset waypoints
       
+      // Initialize component positions for delta tracking (fixes first movement issue)
+      // Store the positions of both components so the first drag works correctly
+      if (!componentPositionsRef.current[newWire.sourceComponent]) {
+        // Estimate source component position from pin position
+        // (This is approximate but gets corrected on first actual movement)
+        componentPositionsRef.current[newWire.sourceComponent] = {
+          x: newWire.sourcePos.x,
+          y: newWire.sourcePos.y
+        };
+      }
+      if (!componentPositionsRef.current[newWire.targetComponent]) {
+        // Estimate target component position from pin position
+        componentPositionsRef.current[newWire.targetComponent] = {
+          x: newWire.targetPos.x,
+          y: newWire.targetPos.y
+        };
+      }
+      
       // Notify that wire drawing has ended
       document.dispatchEvent(new CustomEvent('wireDrawingEnded'));
       
@@ -690,69 +711,72 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     return null;
   };
 
-  // Refresh wire endpoints when a component moves
-  const refreshWireEndpoints = (componentId, pinPositions = null) => {
-    console.log(`[WireManager] Refreshing wire endpoints for component ${componentId}`, pinPositions);
+  // Refresh wire endpoints when a component moves using delta-based updates
+  const refreshWireEndpoints = (componentId, newPosition) => {
+    // Get the last known position for this component
+    const lastPos = componentPositionsRef.current[componentId];
     
+    if (!lastPos) {
+      // First time seeing this component, just store its position
+      componentPositionsRef.current[componentId] = newPosition;
+      console.log(`[WireManager] Stored initial position for ${componentId}:`, newPosition);
+      return;
+    }
+    
+    // Calculate movement delta
+    const dx = newPosition.x - lastPos.x;
+    const dy = newPosition.y - lastPos.y;
+    
+    // Update stored position
+    componentPositionsRef.current[componentId] = newPosition;
+    
+    // If no movement, skip update
+    if (dx === 0 && dy === 0) return;
+    
+    console.log(`[WireManager] Component ${componentId} moved by delta (${dx.toFixed(1)}, ${dy.toFixed(1)})`);
+    
+    // Apply delta to all wires connected to this component
     setWires(currentWires => {
       return currentWires.map(wire => {
         const newWire = { ...wire };
         let updated = false;
         
         // Update source position if this wire connects to the moved component
-        if (wire.sourceComponent === componentId && wire.sourceId) {
-          let worldPos = null;
+        if (wire.sourceComponent === componentId) {
+          newWire.sourcePos = {
+            x: wire.sourcePos.x + dx,
+            y: wire.sourcePos.y + dy
+          };
+          updated = true;
           
-          // First try to get position from provided pinPositions
-          if (pinPositions && pinPositions[wire.sourceId]) {
-            worldPos = pinPositions[wire.sourceId];
-          } else {
-            // Fallback to DOM query
-            worldPos = getPinWorldPosition(wire.sourceId, wire);
+          // Update optimizedPath first point if it exists
+          if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
+            newWire.optimizedPath = [
+              newWire.sourcePos,
+              ...newWire.optimizedPath.slice(1)
+            ];
           }
           
-          if (worldPos) {
-            newWire.sourcePos = worldPos;
-            updated = true;
-            
-            // Update optimizedPath first point if it exists
-            if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
-              newWire.optimizedPath = [
-                worldPos,
-                ...newWire.optimizedPath.slice(1)
-              ];
-            }
-            
-            console.log(`[WireManager] Updated source ${wire.sourceId} to (${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)})`);
-          }
+          console.log(`[WireManager] Updated source to (${newWire.sourcePos.x.toFixed(1)}, ${newWire.sourcePos.y.toFixed(1)})`);
         }
         
         // Update target position if this wire connects to the moved component
-        if (wire.targetComponent === componentId && wire.targetId) {
-          let worldPos = null;
+        if (wire.targetComponent === componentId) {
+          newWire.targetPos = {
+            x: wire.targetPos.x + dx,
+            y: wire.targetPos.y + dy
+          };
+          updated = true;
           
-          // First try to get position from provided pinPositions
-          if (pinPositions && pinPositions[wire.targetId]) {
-            worldPos = pinPositions[wire.targetId];
-          } else {
-            // Fallback to DOM query
-            worldPos = getPinWorldPosition(wire.targetId, wire);
+          // Update optimizedPath last point if it exists
+          if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
+            newWire.optimizedPath = [
+              ...newWire.optimizedPath.slice(0, -1),
+              newWire.targetPos
+            ];
           }
           
-          if (worldPos) {
-            newWire.targetPos = worldPos;
-            updated = true;
-            
-            // Update optimizedPath last point if it exists
-            if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
-              newWire.optimizedPath = [
-                ...newWire.optimizedPath.slice(0, -1),
-                worldPos
-              ];
-            }
-            
-            console.log(`[WireManager] Updated target ${wire.targetId} to (${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)})`);
-          }
+          console.log(`[WireManager] Updated target to (${newWire.targetPos.x.toFixed(1)}, ${newWire.targetPos.y.toFixed(1)})`);
         }
         
         return updated ? newWire : wire;
@@ -764,14 +788,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   const handleComponentMoved = (event) => {
     console.log('[WireManager] componentMoved event received:', event.detail);
     const componentId = event.detail?.componentId;
-    if (!componentId) {
-      console.log('[WireManager] No componentId in event');
+    const x = event.detail?.x;
+    const y = event.detail?.y;
+    
+    if (!componentId || x === undefined || y === undefined) {
+      console.log('[WireManager] Missing componentId or position in event');
       return;
     }
     
-    // Get pin positions from event if available
-    const pinPositions = event.detail?.pinPositions;
-    refreshWireEndpoints(componentId, pinPositions);
+    // Apply delta-based update
+    refreshWireEndpoints(componentId, { x, y });
   };
 
   // Handle wire color change events from properties panel

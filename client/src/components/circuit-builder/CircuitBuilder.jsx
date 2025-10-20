@@ -357,6 +357,8 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
           isSelected={component.id === selectedComponentId}
           canvasRef={canvasRef}
           onPinConnect={handlePinConnect}
+          zoom={zoom}
+          pan={pan}
         />
       );
     }
