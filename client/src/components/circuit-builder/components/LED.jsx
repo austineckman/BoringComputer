@@ -207,17 +207,26 @@ const LED = ({
     }
   }, [moveableRef.current, rotationAngle]);
 
-  // Update position when dragged AND notify wire manager
+  // Update position when dragged AND notify wire manager with pin positions
   useEffect(() => {
     triggerRedraw();
     
-    // Dispatch component moved event whenever position changes
+    // Dispatch component moved event with pin positions
     if (posLeft !== undefined && posTop !== undefined) {
+      // Calculate pin positions based on LED component position
+      // LED has two pins: Anode (A) at top, Cathode (C) at bottom
+      const pinPositions = {
+        [`pt-led-led-${id}-A`]: { x: posLeft, y: posTop - 15 },
+        [`pt-led-led-${id}-C`]: { x: posLeft, y: posTop + 15 }
+      };
+      
+      console.log(`[LED ${id}] Dispatching componentMoved with pin positions`, pinPositions);
       const event = new CustomEvent('componentMoved', {
         detail: {
           componentId: id,
           x: posLeft,
-          y: posTop
+          y: posTop,
+          pinPositions: pinPositions
         }
       });
       document.dispatchEvent(event);

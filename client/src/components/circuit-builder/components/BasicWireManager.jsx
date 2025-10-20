@@ -626,34 +626,73 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   };
 
   // Get pin world position by querying DOM
-  const getPinWorldPosition = (pinId) => {
+  // Get pin position based on stored wire data and component position
+  const getPinWorldPosition = (pinId, wire) => {
     if (!canvasRef?.current) return null;
     
-    // Find the pin element in the DOM
+    // Try to find the pin element in the DOM first
     const pinElement = document.getElementById(pinId);
-    if (!pinElement) {
-      console.log(`[WireManager] Pin ${pinId} not found in DOM`);
-      return null;
+    if (pinElement) {
+      // Get pin screen position
+      const rect = pinElement.getBoundingClientRect();
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      
+      // Convert to canvas-relative coordinates
+      const canvasX = rect.left + rect.width/2 - canvasRect.left;
+      const canvasY = rect.top + rect.height/2 - canvasRect.top;
+      
+      // Convert to world coordinates
+      const worldX = (canvasX - pan.x) / zoom;
+      const worldY = (canvasY - pan.y) / zoom;
+      
+      return { x: worldX, y: worldY };
     }
     
-    // Get pin screen position
-    const rect = pinElement.getBoundingClientRect();
-    const canvasRect = canvasRef.current.getBoundingClientRect();
+    // Fallback: Calculate position from component position + offset
+    // This is needed for components like LED that use web components
+    if (wire) {
+      // Get the current component element to find its position
+      const componentId = wire.sourceId === pinId ? wire.sourceComponent : wire.targetComponent;
+      const isSource = wire.sourceId === pinId;
+      
+      // Find the component's container element
+      const componentElement = document.querySelector(`[id*="${componentId}"]`);
+      if (componentElement) {
+        const rect = componentElement.getBoundingClientRect();
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        
+        // Calculate component center in canvas coordinates
+        const canvasX = rect.left + rect.width/2 - canvasRect.left;
+        const canvasY = rect.top + rect.height/2 - canvasRect.top;
+        
+        // Convert to world coordinates
+        const worldX = (canvasX - pan.x) / zoom;
+        const worldY = (canvasY - pan.y) / zoom;
+        
+        // Apply pin-specific offset based on pin name
+        const pinName = isSource ? wire.sourceName : wire.targetName;
+        let offsetX = 0, offsetY = 0;
+        
+        // LED pin offsets (approximate based on LED visual)
+        if (componentId.includes('led-')) {
+          if (pinName === 'A' || pinName === 'Anode') {
+            offsetY = -15; // Top pin
+          } else if (pinName === 'C' || pinName === 'Cathode') {
+            offsetY = 15; // Bottom pin
+          }
+        }
+        
+        return { x: worldX + offsetX, y: worldY + offsetY };
+      }
+    }
     
-    // Convert to canvas-relative coordinates
-    const canvasX = rect.left + rect.width/2 - canvasRect.left;
-    const canvasY = rect.top + rect.height/2 - canvasRect.top;
-    
-    // Convert to world coordinates
-    const worldX = (canvasX - pan.x) / zoom;
-    const worldY = (canvasY - pan.y) / zoom;
-    
-    return { x: worldX, y: worldY };
+    console.log(`[WireManager] Pin ${pinId} not found and no fallback available`);
+    return null;
   };
 
   // Refresh wire endpoints when a component moves
-  const refreshWireEndpoints = (componentId) => {
-    console.log(`[WireManager] Refreshing wire endpoints for component ${componentId}`);
+  const refreshWireEndpoints = (componentId, pinPositions = null) => {
+    console.log(`[WireManager] Refreshing wire endpoints for component ${componentId}`, pinPositions);
     
     setWires(currentWires => {
       return currentWires.map(wire => {
@@ -662,7 +701,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
         
         // Update source position if this wire connects to the moved component
         if (wire.sourceComponent === componentId && wire.sourceId) {
-          const worldPos = getPinWorldPosition(wire.sourceId);
+          let worldPos = null;
+          
+          // First try to get position from provided pinPositions
+          if (pinPositions && pinPositions[wire.sourceId]) {
+            worldPos = pinPositions[wire.sourceId];
+          } else {
+            // Fallback to DOM query
+            worldPos = getPinWorldPosition(wire.sourceId, wire);
+          }
+          
           if (worldPos) {
             newWire.sourcePos = worldPos;
             updated = true;
@@ -681,7 +729,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
         
         // Update target position if this wire connects to the moved component
         if (wire.targetComponent === componentId && wire.targetId) {
-          const worldPos = getPinWorldPosition(wire.targetId);
+          let worldPos = null;
+          
+          // First try to get position from provided pinPositions
+          if (pinPositions && pinPositions[wire.targetId]) {
+            worldPos = pinPositions[wire.targetId];
+          } else {
+            // Fallback to DOM query
+            worldPos = getPinWorldPosition(wire.targetId, wire);
+          }
+          
           if (worldPos) {
             newWire.targetPos = worldPos;
             updated = true;
@@ -705,10 +762,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
 
   // Handle component movement events
   const handleComponentMoved = (event) => {
+    console.log('[WireManager] componentMoved event received:', event.detail);
     const componentId = event.detail?.componentId;
-    if (!componentId) return;
+    if (!componentId) {
+      console.log('[WireManager] No componentId in event');
+      return;
+    }
     
-    refreshWireEndpoints(componentId);
+    // Get pin positions from event if available
+    const pinPositions = event.detail?.pinPositions;
+    refreshWireEndpoints(componentId, pinPositions);
   };
 
   // Handle wire color change events from properties panel
