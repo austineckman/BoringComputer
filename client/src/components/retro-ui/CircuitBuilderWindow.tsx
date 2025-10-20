@@ -572,12 +572,8 @@ void loop() {
 
   // Handle mouse down for panning (middle mouse button or Space+Left click)
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Disable panning while drawing wires
-    if (wireCreationMode) {
-      return;
-    }
-    
-    // Middle mouse button (1) or Space+Left click for panning
+    // Middle mouse button (1) or Shift+Left click for panning
+    // Allow these even during wire drawing mode
     if (e.button === 1 || (e.button === 0 && (e.shiftKey || e.metaKey))) {
       e.preventDefault();
       setIsPanning(true);
@@ -585,6 +581,10 @@ void loop() {
         x: e.clientX - pan.x,
         y: e.clientY - pan.y
       });
+    }
+    // Block regular left-click panning only when drawing wires
+    else if (wireCreationMode && e.button === 0) {
+      return;
     }
   };
 
