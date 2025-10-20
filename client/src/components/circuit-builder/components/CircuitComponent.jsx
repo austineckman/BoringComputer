@@ -445,6 +445,47 @@ const CircuitComponent = ({
     };
   }, [id, pins, position]);
   
+  // Register component pins with PinRegistry on mount and position changes
+  useEffect(() => {
+    const registry = window.globalPinRegistry;
+    if (!registry || !componentRef.current || !canvasRef?.current) return;
+
+    const getPinPositions = () => {
+      const pins = componentRef.current.querySelectorAll('.pin-point');
+      const pinPositions = {};
+      
+      pins.forEach(pin => {
+        const pinId = pin.dataset.pinId;
+        if (pinId) {
+          const rect = pin.getBoundingClientRect();
+          const canvasRect = canvasRef.current.getBoundingClientRect();
+          const formattedPinId = `pt-${type.toLowerCase().replace(/ /g, '')}-${id.replace(/ /g, '')}-${pinId}`;
+          
+          pinPositions[formattedPinId] = {
+            x: rect.left + rect.width/2 - canvasRect.left,
+            y: rect.top + rect.height/2 - canvasRect.top
+          };
+        }
+      });
+      
+      return pinPositions;
+    };
+
+    const pins = getPinPositions();
+    if (Object.keys(pins).length > 0) {
+      const existingPins = registry.pins[id];
+      if (!existingPins) {
+        registry.registerComponent(id, pins);
+      } else {
+        registry.updatePinPositions(id, pins);
+      }
+    }
+
+    return () => {
+      registry.unregisterComponent(id);
+    };
+  }, [id, type, position, canvasRef]);
+
   // Enhanced handle global mouse events for dragging with pin movement tracking
   useEffect(() => {
     if (!isDragging) return;
@@ -500,14 +541,11 @@ const CircuitComponent = ({
           });
         }
         
-        // Dispatch move event to update connected wire positions
-        document.dispatchEvent(new CustomEvent('componentMoved', {
-          detail: {
-            componentId: id,
-            newPosition: { x: newX, y: newY },
-            pinPositions
-          }
-        }));
+        // Update PinRegistry with new pin positions
+        const registry = window.globalPinRegistry;
+        if (registry && Object.keys(pinPositions).length > 0) {
+          registry.updatePinPositions(id, pinPositions);
+        }
       }
     };
     

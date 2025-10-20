@@ -3,6 +3,77 @@ import { useSimulator } from '../simulator/SimulatorContext';
 import { WireRouter } from '../utils/WireRouter';
 
 /**
+ * Centralized Pin Registry - tracks all component pins globally
+ * Components register their pins here so wire manager can always find current positions
+ */
+class PinRegistry {
+  constructor() {
+    this.pins = {}; // componentId -> { pinId: { x, y, getPosition } }
+    this.listeners = [];
+  }
+
+  registerComponent(componentId, pins) {
+    console.log(`[PinRegistry] Registering component ${componentId} with ${Object.keys(pins).length} pins`);
+    this.pins[componentId] = pins;
+    this.notifyListeners('register', componentId);
+  }
+
+  unregisterComponent(componentId) {
+    console.log(`[PinRegistry] Unregistering component ${componentId}`);
+    delete this.pins[componentId];
+    this.notifyListeners('unregister', componentId);
+  }
+
+  updatePinPositions(componentId, pinPositions) {
+    if (this.pins[componentId]) {
+      Object.keys(pinPositions).forEach(pinId => {
+        if (this.pins[componentId][pinId]) {
+          this.pins[componentId][pinId].x = pinPositions[pinId].x;
+          this.pins[componentId][pinId].y = pinPositions[pinId].y;
+        }
+      });
+      this.notifyListeners('update', componentId, pinPositions);
+    }
+  }
+
+  getPinPosition(componentId, pinId) {
+    const component = this.pins[componentId];
+    if (!component) return null;
+    
+    const pin = component[pinId];
+    if (!pin) return null;
+    
+    // If pin has a getPosition function, call it for dynamic positioning
+    if (typeof pin.getPosition === 'function') {
+      return pin.getPosition();
+    }
+    
+    // Otherwise return static position
+    return { x: pin.x, y: pin.y };
+  }
+
+  subscribe(listener) {
+    this.listeners.push(listener);
+  }
+
+  unsubscribe(listener) {
+    this.listeners = this.listeners.filter(l => l !== listener);
+  }
+
+  notifyListeners(event, componentId, data) {
+    this.listeners.forEach(listener => listener(event, componentId, data));
+  }
+}
+
+// Global pin registry instance
+const globalPinRegistry = new PinRegistry();
+
+// Export for use by components
+if (typeof window !== 'undefined') {
+  window.globalPinRegistry = globalPinRegistry;
+}
+
+/**
  * BasicWireManager - A simplified wire manager component that handles
  * connecting pins between circuit components.
  */
@@ -554,74 +625,61 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     // No continuous drawing mode
   };
 
-  // Handle component movement events to update wire positions
-  const handleComponentMoved = (event) => {
-    const componentId = event.detail?.componentId;
-    const pinPositions = event.detail?.pinPositions;
+  // Handle pin registry updates - updates wires when pins move
+  const handlePinRegistryUpdate = (event, componentId, pinPositions) => {
+    if (event !== 'update') return;
     
-    if (!componentId) return;
+    console.log(`[WireManager] PinRegistry update for ${componentId}`, pinPositions);
     
-    console.log(`[WireManager] Component ${componentId} moved, updating wire positions`, {
-      pinPositions,
-      currentWireCount: wires.length,
-      zoom,
-      pan
-    });
-    
-    // Update all wire positions for this component
+    // Update all wires connected to this component
     setWires(wires => {
       return wires.map(wire => {
+        let updated = false;
         const newWire = { ...wire };
         
         // Update source position if it's from the moved component
-        if (wire.sourceComponent === componentId) {
-          // First try to use the pinPositions from the event (most accurate during drag)
-          if (pinPositions && wire.sourceId) {
-            const pinPos = pinPositions[wire.sourceId];
-            if (pinPos) {
-              // Convert screen coordinates to world coordinates
-              const worldX = (pinPos.x - pan.x) / zoom;
-              const worldY = (pinPos.y - pan.y) / zoom;
-              
-              newWire.sourcePos = { x: worldX, y: worldY };
-              
-              // CRITICAL FIX: Update optimizedPath if it exists (for wires with pivot points)
-              if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
-                // Update the first point in the optimizedPath (the source endpoint)
-                newWire.optimizedPath = [
-                  { x: worldX, y: worldY },
-                  ...newWire.optimizedPath.slice(1)
-                ];
-              }
-              
-              console.log(`Updated source wire position from event: (${worldX}, ${worldY})`);
+        if (wire.sourceComponent === componentId && wire.sourceId) {
+          const pinPos = globalPinRegistry.getPinPosition(componentId, wire.sourceId);
+          if (pinPos) {
+            // Convert canvas-relative coordinates to world coordinates
+            const worldX = (pinPos.x - pan.x) / zoom;
+            const worldY = (pinPos.y - pan.y) / zoom;
+            
+            newWire.sourcePos = { x: worldX, y: worldY };
+            updated = true;
+            
+            // Update optimizedPath if it exists (for wires with pivot points)
+            if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
+              newWire.optimizedPath = [
+                { x: worldX, y: worldY },
+                ...newWire.optimizedPath.slice(1)
+              ];
             }
+            
+            console.log(`[WireManager] Updated source ${wire.sourceId} to world (${worldX}, ${worldY})`);
           }
         }
         
         // Update target position if it's from the moved component
-        if (wire.targetComponent === componentId) {
-          // First try to use the pinPositions from the event (most accurate during drag)
-          if (pinPositions && wire.targetId) {
-            const pinPos = pinPositions[wire.targetId];
-            if (pinPos) {
-              // Convert screen coordinates to world coordinates
-              const worldX = (pinPos.x - pan.x) / zoom;
-              const worldY = (pinPos.y - pan.y) / zoom;
-              
-              newWire.targetPos = { x: worldX, y: worldY };
-              
-              // CRITICAL FIX: Update optimizedPath if it exists (for wires with pivot points)
-              if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
-                // Update the last point in the optimizedPath (the target endpoint)
-                newWire.optimizedPath = [
-                  ...newWire.optimizedPath.slice(0, -1),
-                  { x: worldX, y: worldY }
-                ];
-              }
-              
-              console.log(`Updated target wire position from event: (${worldX}, ${worldY})`);
+        if (wire.targetComponent === componentId && wire.targetId) {
+          const pinPos = globalPinRegistry.getPinPosition(componentId, wire.targetId);
+          if (pinPos) {
+            // Convert canvas-relative coordinates to world coordinates
+            const worldX = (pinPos.x - pan.x) / zoom;
+            const worldY = (pinPos.y - pan.y) / zoom;
+            
+            newWire.targetPos = { x: worldX, y: worldY };
+            updated = true;
+            
+            // Update optimizedPath if it exists (for wires with pivot points)
+            if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
+              newWire.optimizedPath = [
+                ...newWire.optimizedPath.slice(0, -1),
+                { x: worldX, y: worldY }
+              ];
             }
+            
+            console.log(`[WireManager] Updated target ${wire.targetId} to world (${worldX}, ${worldY})`);
           }
         }
         
@@ -629,6 +687,14 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
       });
     });
   };
+
+  // Subscribe to pin registry updates
+  useEffect(() => {
+    globalPinRegistry.subscribe(handlePinRegistryUpdate);
+    return () => {
+      globalPinRegistry.unsubscribe(handlePinRegistryUpdate);
+    };
+  }, [wires, zoom, pan]);
 
   // Handle wire color change events from properties panel
   const handleWireColorChangeEvent = (event) => {

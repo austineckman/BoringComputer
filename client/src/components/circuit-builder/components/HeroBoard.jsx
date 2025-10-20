@@ -125,30 +125,25 @@ const HeroBoard = ({
     }
   }, [componentStates, id]);
   
-  // Notify about component movement for wire position updates
+  // Register pins with global PinRegistry and update on movement
   useEffect(() => {
-    // After drag, notify the Canvas about our new position
-    if (!isDragged && posLeft !== undefined && posTop !== undefined) {
-      // Only notify once the drag is complete
-      console.log(`HeroBoard ${id} moved to ${posLeft}, ${posTop}`);
-      
-      // Get all pin elements for this component
+    const registry = window.globalPinRegistry;
+    if (!registry || !canvasRef.current) return;
+
+    // Helper to get current pin positions
+    const getPinPositions = () => {
       const heroboardPins = [...document.querySelectorAll(`[id^="pt-heroboard-${id}-"]`)];
       const pinPositions = {};
       
-      // The offset correction for HERO board pins - critical fix
-      // This offset accounts for the discrepancy between the web component's
-      // internal pin positioning and our DOM/canvas coordinate system
-      const OFFSET_CORRECTION_X = 256; // Experimentally determined for HERO board 
-      const OFFSET_CORRECTION_Y = 304; // Experimentally determined for HERO board
+      // The offset correction for HERO board pins
+      const OFFSET_CORRECTION_X = 256;
+      const OFFSET_CORRECTION_Y = 304;
       
-      // Calculate updated pin positions
       heroboardPins.forEach(pinElement => {
         if (pinElement && pinElement.id) {
           const rect = pinElement.getBoundingClientRect();
           const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
           
-          // Apply the offset correction specifically for HERO board
           pinPositions[pinElement.id] = {
             x: rect.left + rect.width/2 - canvasRect.left + OFFSET_CORRECTION_X,
             y: rect.top + rect.height/2 - canvasRect.top + OFFSET_CORRECTION_Y
@@ -156,19 +151,24 @@ const HeroBoard = ({
         }
       });
       
-      // Dispatch component moved event to update wire positions
-      const event = new CustomEvent('componentMovedFinal', {
-        detail: {
-          componentId: id,
-          x: posLeft,
-          y: posTop,
-          pinPositions: pinPositions, // Include accurate pin positions
-          isCorrected: true, // Flag to indicate these coordinates are already corrected
-        }
-      });
-      document.dispatchEvent(event);
+      return pinPositions;
+    };
+
+    // Register component pins on mount
+    const initialPins = getPinPositions();
+    registry.registerComponent(id, initialPins);
+
+    // Update pin positions when component moves
+    if (posLeft !== undefined && posTop !== undefined) {
+      const updatedPins = getPinPositions();
+      registry.updatePinPositions(id, updatedPins);
     }
-  }, [id, isDragged, posLeft, posTop, canvasRef]);
+
+    // Cleanup: unregister on unmount
+    return () => {
+      registry.unregisterComponent(id);
+    };
+  }, [id, posLeft, posTop, canvasRef]);
 
   const onPinInfoChange = (e) => {
     setPinInfo(e.detail);

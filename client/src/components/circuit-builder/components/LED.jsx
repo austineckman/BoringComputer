@@ -149,6 +149,8 @@ const LED = ({
 
   // Handle drag or rotate
   const onDragOrRotate = ({ target, beforeTranslate, beforeRotate }) => {
+    console.log(`[LED ${id}] onDragOrRotate called`, { beforeTranslate, beforeRotate });
+    
     if (beforeTranslate) {
       const [x, y] = beforeTranslate;
       setPosTop(y);
@@ -157,6 +159,7 @@ const LED = ({
       // CONTINUOUS UPDATE: Dispatch move event during drag (not just at end)
       // Get all pin elements for this component
       const ledPins = [...document.querySelectorAll(`[id^="pt-led-${id}-"]`)];
+      console.log(`[LED ${id}] Found ${ledPins.length} pins with selector: [id^="pt-led-${id}-"]`);
       const pinPositions = {};
       
       // Calculate updated pin positions
@@ -170,12 +173,13 @@ const LED = ({
             x: rect.left + rect.width/2 - canvasRect.left,
             y: rect.top + rect.height/2 - canvasRect.top
           };
+          console.log(`[LED ${id}] Pin ${pinElement.id} position:`, pinPositions[pinElement.id]);
         }
       });
       
       // Dispatch component moved event to update wire positions DURING drag
       if (Object.keys(pinPositions).length > 0) {
-        console.log(`[LED ${id}] Dispatching componentMoved event with ${Object.keys(pinPositions).length} pins`);
+        console.log(`[LED ${id}] Dispatching componentMoved event with ${Object.keys(pinPositions).length} pins`, pinPositions);
         const event = new CustomEvent('componentMoved', {
           detail: {
             componentId: id,
@@ -185,6 +189,8 @@ const LED = ({
           }
         });
         document.dispatchEvent(event);
+      } else {
+        console.log(`[LED ${id}] NO PINS FOUND - not dispatching event`);
       }
     }
     
@@ -201,10 +207,58 @@ const LED = ({
     }
   }, [moveableRef.current, rotationAngle]);
 
-  // Update position when dragged
+  // Update position when dragged AND register with PinRegistry
   useEffect(() => {
     triggerRedraw();
-  }, [pinInfo, posTop, posLeft]);
+    
+    const registry = window.globalPinRegistry;
+    if (!registry || !canvasRef.current) return;
+
+    // Helper to get current pin positions
+    const getPinPositions = () => {
+      // Try to find LED pins with correct selector
+      const selector = `[id*="${id}"][id*="pt-"]`;
+      const ledPins = [...document.querySelectorAll(selector)];
+      const pinPositions = {};
+      
+      ledPins.forEach(pinElement => {
+        if (pinElement && pinElement.id && pinElement.id.includes(id)) {
+          const rect = pinElement.getBoundingClientRect();
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          
+          pinPositions[pinElement.id] = {
+            x: rect.left + rect.width/2 - canvasRect.left,
+            y: rect.top + rect.height/2 - canvasRect.top
+          };
+        }
+      });
+      
+      return pinPositions;
+    };
+
+    // Register or update pin positions
+    const pins = getPinPositions();
+    if (Object.keys(pins).length > 0) {
+      // Check if already registered
+      const existingPins = registry.pins[id];
+      if (!existingPins) {
+        registry.registerComponent(id, pins);
+      } else {
+        registry.updatePinPositions(id, pins);
+      }
+    }
+
+  }, [pinInfo, posTop, posLeft, id, canvasRef]);
+
+  // Cleanup: unregister from PinRegistry on unmount
+  useEffect(() => {
+    return () => {
+      const registry = window.globalPinRegistry;
+      if (registry) {
+        registry.unregisterComponent(id);
+      }
+    };
+  }, [id]);
 
   // Notify about component movement for wire position updates
   useEffect(() => {
