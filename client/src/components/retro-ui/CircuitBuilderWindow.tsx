@@ -893,11 +893,26 @@ void loop() {
   // Handle saving a project
   const handleSaveProject = async (name: string, description: string, isPublic: boolean, guestName?: string) => {
     try {
+      // Stop simulation before saving to capture exact state
+      if (isSimulationRunning) {
+        addSimulationLog('Stopping simulation before saving...');
+        if (selectedBoard) {
+          stopSimulationForBoard(selectedBoard);
+        } else {
+          stopSimulation();
+        }
+        setIsSimulationRunning(false);
+        if (typeof window !== 'undefined') {
+          (window as any).isSimulationRunning = false;
+        }
+      }
+
+      // Capture exact circuit state with all layout information
       const circuitData = {
-        components,
-        wires,
-        zoom,
-        pan
+        components,  // Contains x, y positions and all component properties
+        wires,       // Contains complete wire path data
+        zoom,        // Preserves zoom level
+        pan          // Preserves pan position
       };
 
       const response = await apiRequest('POST', '/api/circuit-projects', {
@@ -905,7 +920,7 @@ void loop() {
         description,
         circuit: circuitData,
         code: getCurrentCode(),
-        boardCodes: boardCodes,
+        boardCodes: boardCodes,  // Multi-board code support
         isPublic,
         guestName: user ? undefined : guestName, // Only include guestName for non-authenticated users
       });
@@ -917,7 +932,7 @@ void loop() {
 
       showNotification(
         isPublic 
-          ? `Project "${name}" published successfully!` 
+          ? `Project "${name}" published successfully! Others can now view and load your circuit.` 
           : `Project "${name}" saved successfully!`,
         'success'
       );
@@ -930,11 +945,24 @@ void loop() {
 
   // Handle loading a project
   const handleLoadProject = (project: any) => {
-    // Load the circuit data
+    // Stop simulation before loading
+    if (isSimulationRunning) {
+      if (selectedBoard) {
+        stopSimulationForBoard(selectedBoard);
+      } else {
+        stopSimulation();
+      }
+      setIsSimulationRunning(false);
+      if (typeof window !== 'undefined') {
+        (window as any).isSimulationRunning = false;
+      }
+    }
+
+    // Load the exact circuit layout with all positioning data
     if (project.circuit) {
       setComponents(project.circuit.components || []);
       setWires(project.circuit.wires || []);
-      if (project.circuit.zoom) setZoom(project.circuit.zoom);
+      if (project.circuit.zoom !== undefined) setZoom(project.circuit.zoom);
       if (project.circuit.pan) setPan(project.circuit.pan);
     }
     
@@ -945,17 +973,32 @@ void loop() {
     if (project.boardCodes && Object.keys(project.boardCodes).length > 0) {
       // Load multi-board codes
       setBoardCodes(project.boardCodes);
-    } else if (project.code) {
-      // Load single code to current board
-      const codeToLoad = project.code || '';
-      if (selectedBoard) {
-        updateCurrentCode(codeToLoad);
+      
+      // Find hero boards and select the first one
+      const heroBoards = project.circuit.components?.filter((c: any) => c.type === 'heroboard');
+      if (heroBoards && heroBoards.length > 0) {
+        setSelectedBoard(heroBoards[0].id);
       }
+    } else if (project.code) {
+      // Load single code to current board (backward compatibility)
+      const codeToLoad = project.code || '';
+      
+      // Find first hero board and set its code
+      const heroBoards = project.circuit.components?.filter((c: any) => c.type === 'heroboard');
+      if (heroBoards && heroBoards.length > 0) {
+        const firstBoardId = heroBoards[0].id;
+        setBoardCodes({ [firstBoardId]: codeToLoad });
+        setSelectedBoard(firstBoardId);
+      }
+      
       updateSimulatorCode(codeToLoad);
     }
     
     // Show success notification
-    showNotification(`Loaded project: ${project.name}`, 'success');
+    showNotification(`Loaded project: ${project.name} - Circuit layout restored exactly as saved`, 'success');
+    
+    // Close the browse modal
+    setShowBrowseProjectsModal(false);
   };
   
   // Run the simulation

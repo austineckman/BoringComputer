@@ -126,11 +126,17 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
                 <span className="font-medium">Public</span>
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">
-              {isPublic
-                ? 'Anyone can view and load your project'
-                : 'Only you can access this project'}
-            </p>
+            {isPublic ? (
+              <div className="text-xs text-gray-400 mt-2 space-y-1">
+                <div>✓ Takes a snapshot of your exact circuit layout and code</div>
+                <div>✓ Others can view and load your project</div>
+                <div>✓ They can boot into your circuit with the same layout</div>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 mt-2">
+                Only you can access this project
+              </p>
+            )}
           </div>
 
           {/* Buttons */}
