@@ -417,11 +417,21 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   
   // Handle canvas clicks to add waypoints during wire drawing and clear selection
   const handleCanvasClick = (e) => {
+    console.log('Canvas click detected, target:', e.target.tagName || e.target, 'className:', e.target.className, 'pendingConnection:', !!pendingConnection);
+    
     // Only respond if clicking on canvas or canvas background elements (not components)
-    // Check if target is the canvas itself or a child of the canvas (like background rect/pattern)
+    // Accept clicks on the canvas div itself or its background/transform children
     const isCanvasOrBackground = 
       e.target === canvasRef.current || 
-      (e.target.tagName && (e.target.tagName === 'rect' || e.target.tagName === 'svg' || e.target.classList?.contains('background')));
+      (e.target.tagName === 'DIV' && (
+        e.target.classList?.contains('blueprint-canvas') ||
+        e.target.classList?.contains('background') ||
+        // Accept the inner transformed div (which has no specific class but is a direct child)
+        e.target.parentElement === canvasRef.current
+      )) ||
+      (e.target.tagName && (e.target.tagName === 'rect' || e.target.tagName === 'svg'));
+    
+    console.log('isCanvasOrBackground:', isCanvasOrBackground);
     
     if (isCanvasOrBackground) {
       if (pendingConnection) {

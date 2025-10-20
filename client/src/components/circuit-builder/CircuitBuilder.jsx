@@ -593,12 +593,17 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
       
       {/* Main canvas */}
       <div 
-        className={`flex-1 relative h-full overflow-hidden blueprint-canvas ${isPanning ? 'panning' : ''}`}
+        className={`flex-1 relative h-full overflow-hidden blueprint-canvas ${isPanning ? 'panning' : ''} ${wireCreationMode ? 'wire-drawing' : ''}`}
         ref={canvasRef}
         style={{
-          backgroundSize: `${20 * zoom}px ${20 * zoom}px`
+          backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
+          cursor: wireCreationMode ? 'crosshair' : 'default'
         }}
         onClick={(e) => {
+          // Don't handle clicks during wire creation - let BasicWireManager handle them
+          if (wireCreationMode) {
+            return;
+          }
           // Only deselect when clicking directly on the canvas background
           if (e.target === canvasRef.current) {
             setSelectedComponentId(null);
