@@ -333,12 +333,17 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
           sourceComponent: parentComponentId,
           sourceName: pinName
         });
+        
+        // Notify that wire drawing has started
+        document.dispatchEvent(new CustomEvent('wireDrawingStarted'));
         return;
       }
       
       // If clicking on the same pin, cancel the pending connection
       if (pendingConnection.sourceId === pinId) {
         setPendingConnection(null);
+        // Notify that wire drawing has ended
+        document.dispatchEvent(new CustomEvent('wireDrawingEnded'));
         return;
       }
       
@@ -382,6 +387,9 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
       setWires([...wires, newWire]);
       setPendingConnection(null);
       setPendingWireWaypoints([]); // Reset waypoints
+      
+      // Notify that wire drawing has ended
+      document.dispatchEvent(new CustomEvent('wireDrawingEnded'));
       
       console.log(`Created wire from ${pendingConnection.sourceName} to ${pinName} with ${pendingWireWaypoints.length} waypoints`, {
         originalWaypoints: drawnPath,

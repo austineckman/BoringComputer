@@ -291,6 +291,25 @@ void loop() {
     }
   }, [components, selectedBoard, boardCodes, defaultCode]);
 
+  // Listen for wire drawing events from BasicWireManager
+  useEffect(() => {
+    const handleWireDrawingStarted = () => {
+      setWireCreationMode(true);
+    };
+    
+    const handleWireDrawingEnded = () => {
+      setWireCreationMode(false);
+    };
+    
+    document.addEventListener('wireDrawingStarted', handleWireDrawingStarted);
+    document.addEventListener('wireDrawingEnded', handleWireDrawingEnded);
+    
+    return () => {
+      document.removeEventListener('wireDrawingStarted', handleWireDrawingStarted);
+      document.removeEventListener('wireDrawingEnded', handleWireDrawingEnded);
+    };
+  }, []);
+
   // Get current board's code
   const getCurrentCode = () => {
     if (selectedBoard && boardCodes[selectedBoard]) {
@@ -534,6 +553,11 @@ void loop() {
       setSelectedWire(null);
     }
     
+    // Disable panning while drawing wires - clicks should add pivot points instead
+    if (wireCreationMode) {
+      return;
+    }
+    
     // Only start panning if the middle mouse button (wheel) is pressed or 
     // if holding the spacebar and using left click
     if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
@@ -548,6 +572,11 @@ void loop() {
 
   // Handle mouse down for panning (middle mouse button or Space+Left click)
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Disable panning while drawing wires
+    if (wireCreationMode) {
+      return;
+    }
+    
     // Middle mouse button (1) or Space+Left click for panning
     if (e.button === 1 || (e.button === 0 && (e.shiftKey || e.metaKey))) {
       e.preventDefault();
