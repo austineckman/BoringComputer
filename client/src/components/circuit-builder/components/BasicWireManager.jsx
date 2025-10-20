@@ -707,10 +707,6 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     // Listen for pin clicks from components
     document.addEventListener('pinClicked', handlePinClick);
     
-    // Listen for component move events
-    document.addEventListener('componentMoved', handleComponentMoved);
-    document.addEventListener('componentMovedFinal', handleComponentMoved);
-    
     // Listen for wire color change events from properties panel
     document.addEventListener('wireColorChange', handleWireColorChangeEvent);
     
@@ -719,10 +715,7 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     if (canvas) {
       canvas.addEventListener('click', handleCanvasClick);
       canvas.addEventListener('mousemove', handleMouseMove);
-      // No longer needed for click-based drawing
     }
-
-    // No longer needed for click-based drawing
     
     // Add keyboard handler for deletion
     window.addEventListener('keydown', handleKeyDown);
@@ -730,16 +723,12 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     // Cleanup event listeners
     return () => {
       document.removeEventListener('pinClicked', handlePinClick);
-      document.removeEventListener('componentMoved', handleComponentMoved);
-      document.removeEventListener('componentMovedFinal', handleComponentMoved);
       document.removeEventListener('wireColorChange', handleWireColorChangeEvent);
       
       if (canvas) {
         canvas.removeEventListener('click', handleCanvasClick);
         canvas.removeEventListener('mousemove', handleMouseMove);
-        // No longer needed for click-based drawing
       }
-      // No longer needed for click-based drawing
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [canvasRef, pendingConnection, pendingWireWaypoints, selectedWireId, wires, zoom, pan]);
