@@ -932,6 +932,7 @@ void loop() {
 
   // Handle saving a project
   const handleSaveProject = async (name: string, description: string, isPublic: boolean, guestName?: string) => {
+    console.log('handleSaveProject called with:', { name, description, isPublic, guestName, isAuthenticated: !!user });
     try {
       // Stop simulation before saving to capture exact state
       if (isSimulationRunning) {
@@ -955,6 +956,7 @@ void loop() {
         pan          // Preserves pan position
       };
 
+      console.log('Sending save project request to API...');
       const response = await apiRequest('POST', '/api/circuit-projects', {
         name,
         description,
@@ -965,7 +967,9 @@ void loop() {
         guestName: user ? undefined : guestName, // Only include guestName for non-authenticated users
       });
 
+      console.log('API response status:', response.status);
       const savedProject = await response.json();
+      console.log('Saved project:', savedProject);
       
       // Update project name in UI
       setProjectName(name);

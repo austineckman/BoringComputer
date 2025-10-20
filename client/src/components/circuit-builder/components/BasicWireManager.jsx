@@ -579,6 +579,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
               const worldY = (pinPos.y - pan.y) / zoom;
               
               newWire.sourcePos = { x: worldX, y: worldY };
+              
+              // CRITICAL FIX: Update optimizedPath if it exists (for wires with pivot points)
+              if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
+                // Update the first point in the optimizedPath (the source endpoint)
+                newWire.optimizedPath = [
+                  { x: worldX, y: worldY },
+                  ...newWire.optimizedPath.slice(1)
+                ];
+              }
+              
               console.log(`Updated source wire position from event: (${worldX}, ${worldY})`);
             }
           }
@@ -595,6 +605,16 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
               const worldY = (pinPos.y - pan.y) / zoom;
               
               newWire.targetPos = { x: worldX, y: worldY };
+              
+              // CRITICAL FIX: Update optimizedPath if it exists (for wires with pivot points)
+              if (newWire.optimizedPath && newWire.optimizedPath.length > 0) {
+                // Update the last point in the optimizedPath (the target endpoint)
+                newWire.optimizedPath = [
+                  ...newWire.optimizedPath.slice(0, -1),
+                  { x: worldX, y: worldY }
+                ];
+              }
+              
               console.log(`Updated target wire position from event: (${worldX}, ${worldY})`);
             }
           }
