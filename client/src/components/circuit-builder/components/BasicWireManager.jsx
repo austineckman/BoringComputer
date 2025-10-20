@@ -561,7 +561,12 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     
     if (!componentId) return;
     
-    console.log(`Component ${componentId} moved, updating wire positions`);
+    console.log(`[WireManager] Component ${componentId} moved, updating wire positions`, {
+      pinPositions,
+      currentWireCount: wires.length,
+      zoom,
+      pan
+    });
     
     // Update all wire positions for this component
     setWires(wires => {

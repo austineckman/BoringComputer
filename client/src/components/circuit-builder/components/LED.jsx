@@ -153,6 +153,39 @@ const LED = ({
       const [x, y] = beforeTranslate;
       setPosTop(y);
       setPosLeft(x);
+      
+      // CONTINUOUS UPDATE: Dispatch move event during drag (not just at end)
+      // Get all pin elements for this component
+      const ledPins = [...document.querySelectorAll(`[id^="pt-led-${id}-"]`)];
+      const pinPositions = {};
+      
+      // Calculate updated pin positions
+      ledPins.forEach(pinElement => {
+        if (pinElement && pinElement.id) {
+          const rect = pinElement.getBoundingClientRect();
+          const canvasRect = canvasRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+          
+          // Store pin position relative to canvas
+          pinPositions[pinElement.id] = {
+            x: rect.left + rect.width/2 - canvasRect.left,
+            y: rect.top + rect.height/2 - canvasRect.top
+          };
+        }
+      });
+      
+      // Dispatch component moved event to update wire positions DURING drag
+      if (Object.keys(pinPositions).length > 0) {
+        console.log(`[LED ${id}] Dispatching componentMoved event with ${Object.keys(pinPositions).length} pins`);
+        const event = new CustomEvent('componentMoved', {
+          detail: {
+            componentId: id,
+            x: x,
+            y: y,
+            pinPositions: pinPositions,
+          }
+        });
+        document.dispatchEvent(event);
+      }
     }
     
     if (beforeRotate !== undefined) {
