@@ -406,8 +406,13 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   
   // Handle canvas clicks to add waypoints during wire drawing and clear selection
   const handleCanvasClick = (e) => {
-    // Only respond if clicking directly on the canvas (not a component)
-    if (e.target === canvasRef.current) {
+    // Only respond if clicking on canvas or canvas background elements (not components)
+    // Check if target is the canvas itself or a child of the canvas (like background rect/pattern)
+    const isCanvasOrBackground = 
+      e.target === canvasRef.current || 
+      (e.target.tagName && (e.target.tagName === 'rect' || e.target.tagName === 'svg' || e.target.classList?.contains('background')));
+    
+    if (isCanvasOrBackground) {
       if (pendingConnection) {
         // Get the click position relative to the canvas
         const canvasRect = canvasRef.current.getBoundingClientRect();
