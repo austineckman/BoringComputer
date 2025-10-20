@@ -374,6 +374,8 @@ const handlePinConnect = (pinId, pinType, componentId, pinPosition) => {
           canvasRef={canvasRef}
           onPinConnect={handlePinConnect}
           color={component.props?.color || 'red'}
+          zoom={zoom}
+          pan={pan}
         />
       );
     }

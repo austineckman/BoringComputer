@@ -28,7 +28,9 @@ const LED = ({
   isSelected,
   canvasRef,
   onPinConnect,
-  color = 'red'
+  color = 'red',
+  zoom = 1,
+  pan = { x: 0, y: 0 }
 }) => {
   const targetRef = useRef();
   const moveableRef = useRef();
@@ -212,26 +214,61 @@ const LED = ({
     triggerRedraw();
     
     // Dispatch component moved event with pin positions
-    if (posLeft !== undefined && posTop !== undefined) {
-      // Calculate pin positions based on LED component position
-      // LED has two pins: Anode (A) at top, Cathode (C) at bottom
-      const pinPositions = {
-        [`pt-led-led-${id}-A`]: { x: posLeft, y: posTop - 15 },
-        [`pt-led-led-${id}-C`]: { x: posLeft, y: posTop + 15 }
-      };
-      
-      console.log(`[LED ${id}] Dispatching componentMoved with pin positions`, pinPositions);
-      const event = new CustomEvent('componentMoved', {
-        detail: {
-          componentId: id,
-          x: posLeft,
-          y: posTop,
-          pinPositions: pinPositions
+    if (posLeft !== undefined && posTop !== undefined && canvasRef?.current) {
+      // Query the actual pin elements from the web component to get their real positions
+      const ledElement = targetRef.current;
+      if (ledElement) {
+        // Get all pin elements inside the LED web component
+        const pinElements = ledElement.querySelectorAll('[data-pin-name], [data-pin]');
+        const pinPositions = {};
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        
+        if (pinElements.length > 0) {
+          // Use actual pin element positions
+          pinElements.forEach(pinEl => {
+            const pinName = pinEl.getAttribute('data-pin-name') || pinEl.getAttribute('data-pin');
+            if (pinName) {
+              const rect = pinEl.getBoundingClientRect();
+              const canvasX = rect.left + rect.width/2 - canvasRect.left;
+              const canvasY = rect.top + rect.height/2 - canvasRect.top;
+              
+              // Convert to world coordinates (same as initial pin click conversion)
+              const worldX = (canvasX - pan.x) / zoom;
+              const worldY = (canvasY - pan.y) / zoom;
+              
+              // Use the same format as initial pin click: pt-{type}-{id}-{pinName}
+              const componentType = id.toLowerCase().split('-')[0]; // Extract 'led' from 'led-xxx'
+              const formattedPinId = `pt-${componentType}-${id}-${pinName}`;
+              pinPositions[formattedPinId] = {
+                x: worldX,
+                y: worldY
+              };
+            }
+          });
+        } else {
+          // Fallback: Use calculated offsets based on LED visual dimensions
+          // The LED web component is approximately 60px tall
+          const ledHeight = 60;
+          const pinOffset = ledHeight / 2 - 5; // Pins are near the ends
+          
+          const componentType = id.toLowerCase().split('-')[0];
+          pinPositions[`pt-${componentType}-${id}-A`] = { x: posLeft, y: posTop - pinOffset };
+          pinPositions[`pt-${componentType}-${id}-C`] = { x: posLeft, y: posTop + pinOffset };
         }
-      });
-      document.dispatchEvent(event);
+        
+        console.log(`[LED ${id}] Dispatching componentMoved with pin positions`, pinPositions);
+        const event = new CustomEvent('componentMoved', {
+          detail: {
+            componentId: id,
+            x: posLeft,
+            y: posTop,
+            pinPositions: pinPositions
+          }
+        });
+        document.dispatchEvent(event);
+      }
     }
-  }, [pinInfo, posTop, posLeft, id]);
+  }, [pinInfo, posTop, posLeft, id, canvasRef, zoom, pan]);
 
   // Update color when changed (e.g., from parent component)
   useEffect(() => {
