@@ -572,6 +572,12 @@ void loop() {
 
   // Handle mouse down for panning (middle mouse button or Space+Left click)
   const handleMouseDown = (e: React.MouseEvent) => {
+    // If in wire creation mode, don't handle any mouse events here
+    // Let BasicWireManager handle clicks for waypoint creation
+    if (wireCreationMode && e.button === 0) {
+      return; // Let the event propagate to BasicWireManager
+    }
+    
     // Middle mouse button (1) or Shift+Left click for panning - always works
     if (e.button === 1 || (e.button === 0 && (e.shiftKey || e.metaKey))) {
       e.preventDefault();
@@ -1450,6 +1456,7 @@ void loop() {
             initialComponents={components} 
             initialWires={wires} 
             isPanning={isPanning}
+            wireCreationMode={wireCreationMode}
             showComponentPanel={showComponentPanel}
             showPropertiesPanel={showPropertiesPanel}
             zoom={zoom}

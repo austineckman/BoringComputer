@@ -342,6 +342,7 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
       // If clicking on the same pin, cancel the pending connection
       if (pendingConnection.sourceId === pinId) {
         setPendingConnection(null);
+        setPendingWireWaypoints([]); // Clear waypoints on cancel
         // Notify that wire drawing has ended
         document.dispatchEvent(new CustomEvent('wireDrawingEnded'));
         return;
@@ -398,6 +399,8 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
     } catch (error) {
       console.error('Error handling pin click:', error);
       setPendingConnection(null);
+      setPendingWireWaypoints([]);
+      document.dispatchEvent(new CustomEvent('wireDrawingEnded'));
     }
   };
   
@@ -457,13 +460,22 @@ const BasicWireManager = ({ canvasRef, onWireSelection, onWireColorChange, zoom 
   const handleKeyDown = (e) => {
     if (e.key === 'Delete' && selectedWireId) {
       deleteWire(selectedWireId);
-    } else if (e.key === 'Escape' && selectedWireId) {
-      // Clear wire selection with ESC key
-      setSelectedWireId(null);
-      if (onWireSelection) {
-        onWireSelection(null, null);
+    } else if (e.key === 'Escape') {
+      // If we have a pending connection, cancel it
+      if (pendingConnection) {
+        setPendingConnection(null);
+        setPendingWireWaypoints([]);
+        document.dispatchEvent(new CustomEvent('wireDrawingEnded'));
+        console.log('Cancelled wire drawing with ESC key');
       }
-      console.log('Cleared wire selection with ESC key');
+      // Also clear wire selection with ESC key
+      else if (selectedWireId) {
+        setSelectedWireId(null);
+        if (onWireSelection) {
+          onWireSelection(null, null);
+        }
+        console.log('Cleared wire selection with ESC key');
+      }
     }
   };
   

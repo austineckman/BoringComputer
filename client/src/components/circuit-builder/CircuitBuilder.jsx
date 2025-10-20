@@ -28,7 +28,7 @@ import OLEDDisplay from './components/OLEDDisplay';
  * Main Circuit Builder component
  * Manages components, wires, and interactions
  */
-const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning = false, showComponentPanel = true, showPropertiesPanel = true, zoom = 1, pan = { x: 0, y: 0 } }) => {
+const CircuitBuilder = ({ initialComponents = [], initialWires = [], isPanning = false, wireCreationMode = false, showComponentPanel = true, showPropertiesPanel = true, zoom = 1, pan = { x: 0, y: 0 } }) => {
   // Access simulator context to share component data
   const { setComponents: setSimulationComponents } = useSimulator();
   
